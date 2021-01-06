@@ -234,15 +234,36 @@ def shift_scale_rotate(
     return warp_affine_fn(img)
 
 
-def bbox_shift_scale_rotate(bbox, angle, scale, dx, dy, rows, cols, **kwargs):  # skipcq: PYL-W0613
-    x_min, y_min, x_max, y_max = bbox[:4]
+# def bbox_shift_scale_rotate(bbox, angle, scale, dx, dy, rows, cols, **kwargs):  # skipcq: PYL-W0613
+#     x_min, y_min, x_max, y_max = bbox[:4]
+#     height, width = rows, cols
+#     center = (width / 2, height / 2)
+#     matrix = cv2.getRotationMatrix2D(center, angle, scale)
+#     matrix[0, 2] += dx * width
+#     matrix[1, 2] += dy * height
+#     x = np.array([x_min, x_max, x_max, x_min])
+#     y = np.array([y_min, y_min, y_max, y_max])
+#     ones = np.ones(shape=(len(x)))
+#     points_ones = np.vstack([x, y, ones]).transpose()
+#     points_ones[:, 0] *= width
+#     points_ones[:, 1] *= height
+#     tr_points = matrix.dot(points_ones.T).T
+#     tr_points[:, 0] /= width
+#     tr_points[:, 1] /= height
+
+#     x_min, x_max = min(tr_points[:, 0]), max(tr_points[:, 0])
+#     y_min, y_max = min(tr_points[:, 1]), max(tr_points[:, 1])
+
+#     return x_min, y_min, x_max, y_max
+
+def bbox_shift_scale_rotate(bbox, angle, scale, dx, dy, interpolation, rows, cols, **params):
     height, width = rows, cols
     center = (width / 2, height / 2)
     matrix = cv2.getRotationMatrix2D(center, angle, scale)
     matrix[0, 2] += dx * width
     matrix[1, 2] += dy * height
-    x = np.array([x_min, x_max, x_max, x_min])
-    y = np.array([y_min, y_min, y_max, y_max])
+    x = np.array([bbox[0], bbox[2], bbox[2], bbox[0]])
+    y = np.array([bbox[1], bbox[1], bbox[3], bbox[3]])
     ones = np.ones(shape=(len(x)))
     points_ones = np.vstack([x, y, ones]).transpose()
     points_ones[:, 0] *= width
@@ -250,12 +271,7 @@ def bbox_shift_scale_rotate(bbox, angle, scale, dx, dy, rows, cols, **kwargs):  
     tr_points = matrix.dot(points_ones.T).T
     tr_points[:, 0] /= width
     tr_points[:, 1] /= height
-
-    x_min, x_max = min(tr_points[:, 0]), max(tr_points[:, 0])
-    y_min, y_max = min(tr_points[:, 1]), max(tr_points[:, 1])
-
-    return x_min, y_min, x_max, y_max
-
+    return [min(tr_points[:, 0]), min(tr_points[:, 1]), max(tr_points[:, 0]), max(tr_points[:, 1])]
 
 @angle_2pi_range
 def keypoint_shift_scale_rotate(keypoint, angle, scale, dx, dy, rows, cols, **params):
